@@ -112,6 +112,11 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 		return create(map.entrySet().iterator());
 	}
 
+	/**
+	 * Projects each element of a sequence into a new form.
+	 * @param projector A transform function to apply to each element.
+	 * @return An Enumerable<T> whose elements are the result of invoking the transform function on each element of source.
+	 */
 	public <U> Enumerable<U> select(final UnaryFunction<T, U> projector) {
 		return new Enumerable<U>() {
 
@@ -123,6 +128,29 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 			@Override
 			public U next() {
 				return projector.invoke(Enumerable.this.next());
+			}
+
+		};
+	}
+
+	/**
+	 * Projects each element of a sequence into a new form by incorporating the element's index.
+	 * @param projector A transform function to apply to each source element; the second parameter of the function represents the index of the source element.
+	 * @return An Enumerable<T> whose elements are the result of invoking the transform function on each element of source.
+	 */
+	public <U> Enumerable<U> select(final BinaryFunction<T, Integer, U> projector) {
+		return new Enumerable<U>() {
+
+			private int i = 0;
+			
+			@Override
+			public boolean hasNext() {
+				return Enumerable.this.hasNext();
+			}
+
+			@Override
+			public U next() {
+				return projector.invoke(Enumerable.this.next(), i++);
 			}
 
 		};
@@ -172,6 +200,11 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 		};
 	}
 
+	/**
+	 * Determines whether all elements of a sequence satisfy a condition.
+	 * @param predicate
+	 * @return true if every element of the source sequence passes the test in the specified predicate, or if the sequence is empty; otherwise, false.
+	 */
 	public boolean all(final UnaryFunction<T, Boolean> predicate) {
 		while (hasNext()) {
 			if (!predicate.invoke(next())) {
@@ -181,6 +214,11 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 		return true;
 	}
 
+	/**
+	 * Determines whether any element of a sequence satisfies a condition.
+	 * @param predicate A function to test each element for a condition.
+	 * @return true if any elements in the source sequence pass the test in the specified predicate; otherwise, false.
+	 */
 	public boolean any(final UnaryFunction<T, Boolean> predicate) {
 		while (hasNext()) {
 			if (predicate.invoke(next())) {
