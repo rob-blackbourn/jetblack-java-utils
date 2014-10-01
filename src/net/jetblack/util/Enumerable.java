@@ -14,7 +14,6 @@ import java.util.Set;
 
 import net.jetblack.util.comparers.EqualityComparer;
 import net.jetblack.util.invokables.BinaryFunction;
-import net.jetblack.util.invokables.NullaryFunction;
 import net.jetblack.util.invokables.UnaryAction;
 import net.jetblack.util.invokables.UnaryFunction;
 import net.jetblack.util.selectors.IdentitySelector;
@@ -222,6 +221,29 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 		};
 	}
 
+	public Enumerable<T> skip(final int size) {
+		return new Enumerable<T>() {
+
+			{
+				int i = 0;
+				while (Enumerable.this.hasNext() && i < size) {
+					next();
+					++i;
+				}
+			}
+			
+			@Override
+			public boolean hasNext() {
+				return Enumerable.this.hasNext();
+			}
+
+			@Override
+			public T next() {
+				return Enumerable.this.next();
+			}
+			
+		};
+	}
 	public Enumerable<Enumerable<T>> buffer(final int size) {
 
 		return new Enumerable<Enumerable<T>>() {
@@ -289,9 +311,7 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 		return value;
 	}
 
-	public <K, V> Map<K, V> toMap(UnaryFunction<T, K> keySelector, UnaryFunction<T, V> valueSelector, NullaryFunction<Map<K, V>> mapFactory) {
-
-		Map<K, V> map = mapFactory.invoke();
+	public <K, V> Map<K, V> toMap(UnaryFunction<T, K> keySelector, UnaryFunction<T, V> valueSelector, Map<K, V> map) {
 
 		while (Enumerable.this.hasNext()) {
 			T item = Enumerable.this.next();
@@ -302,13 +322,10 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 	}
 
 	public <K, V> Map<K, V> toMap(UnaryFunction<T, K> keySelector, UnaryFunction<T, V> valueSelector) {
-		return toMap(keySelector, valueSelector, new MapFactory<K, V>());
+		return toMap(keySelector, valueSelector, new HashMap<K, V>());
 	}
 
-	public <K, V, C extends Collection<V>> Map<K, C> groupBy(UnaryFunction<T, K> keySelector, UnaryFunction<T, V> valueSelector, NullaryFunction<Map<K, C>> mapFactory,
-			NullaryFunction<C> collectionFactory) {
-
-		Map<K, C> map = mapFactory.invoke();
+	public <K, V> Map<K, Collection<V>> groupBy(UnaryFunction<T, K> keySelector, UnaryFunction<T, V> valueSelector, Map<K,Collection<V>> map) {
 
 		while (Enumerable.this.hasNext()) {
 
@@ -317,7 +334,7 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 			final K key = keySelector.invoke(item);
 
 			if (!map.containsKey(key)) {
-				map.put(key, collectionFactory.invoke());
+				map.put(key, new ArrayList<V>());
 			}
 
 			map.get(key).add(valueSelector.invoke(item));
@@ -326,12 +343,8 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 		return map;
 	}
 
-	public <K, V> Map<K, Collection<V>> groupBy(UnaryFunction<T, K> keySelector, UnaryFunction<T, V> valueSelector, NullaryFunction<Map<K, Collection<V>>> mapFactory) {
-		return groupBy(keySelector, valueSelector, mapFactory, new CollectionFactory<V>());
-	}
-
 	public <K, V> Map<K, Collection<V>> groupBy(UnaryFunction<T, K> keySelector, UnaryFunction<T, V> valueSelector) {
-		return groupBy(keySelector, valueSelector, new MapFactory<K, Collection<V>>());
+		return groupBy(keySelector, valueSelector, new HashMap<K,Collection<V>>());
 	}
 
 	public <K> Map<K, Collection<T>> groupBy(UnaryFunction<T, K> keySelector) {
@@ -381,22 +394,6 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 
 	public Set<T> toSet() {
 		return toSet(new HashSet<T>());
-	}
-
-	public final static class CollectionFactory<T> implements NullaryFunction<Collection<T>> {
-		@Override
-		public ArrayList<T> invoke() {
-			return new ArrayList<T>();
-		}
-	}
-
-	public final static class MapFactory<K, V> implements NullaryFunction<Map<K, V>> {
-
-		@Override
-		public Map<K, V> invoke() {
-			return new HashMap<K, V>();
-		}
-
 	}
 
 	public T min(final Comparator<T> comparator) {
@@ -543,10 +540,25 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 		throw new NoSuchElementException();
 	}
 
-	public T last(UnaryFunction<T, Boolean> predicate) {
-
-		return Enumerable.create(this.iterator()).first(predicate);
+	public T last(UnaryFunction<T,Boolean> predicate) {
 		
+		boolean hasResult = false;
+		
+		T result = null;
+		
+		while (hasNext()) {
+			final T value = next();
+			if (predicate.invoke(value)) {
+				hasResult = true;
+				result = value;
+			}
+		}
+		
+		if (!hasResult) {
+			throw new NoSuchElementException();
+		}
+		
+		return result;
 	}
 
 	public T last() {
