@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.jetblack.util.invokables.UnaryFunction;
 import net.jetblack.util.selectors.IdentitySelector;
 import net.jetblack.util.selectors.ToStringSelector;
 
@@ -109,5 +110,109 @@ public class EnumerableTest {
 		for (String value : Enumerable.create(sourceArray).select(new ToStringSelector<Integer>())) {
 			assertEquals(sourceArray[i++].toString(), value);
 		}
+	}
+	
+	@Test
+	public void testWhereAllTrue() {
+		Integer[] sourceArray = new Integer[]{1, 2, 3, 4, 5};
+		Enumerable<Integer> enumerable = Enumerable.create(sourceArray).where(new UnaryFunction<Integer, Boolean>() {
+
+			@Override public Boolean invoke(Integer arg) {
+				return true;
+			}
+			
+		});
+		assertArrayEquals(sourceArray, enumerable.toList().toArray(new Integer[] {}));
+	}
+	
+	@Test
+	public void testWhereAllFalse() {
+		Integer[] sourceArray = new Integer[]{1, 2, 3, 4, 5};
+		Enumerable<Integer> enumerable = Enumerable.create(sourceArray).where(new UnaryFunction<Integer, Boolean>() {
+
+			@Override public Boolean invoke(Integer arg) {
+				return false;
+			}
+			
+		});
+		assertFalse(enumerable.hasNext());
+	}
+	
+	@Test
+	public void testWhereFirstTrue() {
+		Integer[] sourceArray = new Integer[]{1, 2, 3, 4, 5};
+		Enumerable<Integer> enumerable = Enumerable.create(sourceArray).where(new UnaryFunction<Integer, Boolean>() {
+
+			@Override public Boolean invoke(Integer arg) {
+				return arg == 1;
+			}
+			
+		});
+		List<Integer> resultList = enumerable.toList();
+		assertEquals(resultList.size(), 1);
+		assertEquals(resultList.get(0).intValue(), 1);
+	}
+	
+	@Test
+	public void testWhereMiddleTrue() {
+		Integer[] sourceArray = new Integer[]{1, 2, 3, 4, 5};
+		Enumerable<Integer> enumerable = Enumerable.create(sourceArray).where(new UnaryFunction<Integer, Boolean>() {
+
+			@Override public Boolean invoke(Integer arg) {
+				return arg == 3;
+			}
+			
+		});
+		List<Integer> resultList = enumerable.toList();
+		assertEquals(resultList.size(), 1);
+		assertEquals(resultList.get(0).intValue(), 3);
+	}
+	
+	@Test
+	public void testWhereLastTrue() {
+		Integer[] sourceArray = new Integer[]{1, 2, 3, 4, 5};
+		Enumerable<Integer> enumerable = Enumerable.create(sourceArray).where(new UnaryFunction<Integer, Boolean>() {
+
+			@Override public Boolean invoke(Integer arg) {
+				return arg == 5;
+			}
+			
+		});
+		List<Integer> resultList = enumerable.toList();
+		assertEquals(resultList.size(), 1);
+		assertEquals(resultList.get(0).intValue(), 5);
+	}
+	
+	@Test
+	public void testWhereFirstAndLastTrue() {
+		Integer[] sourceArray = new Integer[]{1, 2, 3, 4, 5};
+		Enumerable<Integer> enumerable = Enumerable.create(sourceArray).where(new UnaryFunction<Integer, Boolean>() {
+
+			@Override public Boolean invoke(Integer arg) {
+				return arg == 1 || arg == 5;
+			}
+			
+		});
+		List<Integer> resultList = enumerable.toList();
+		assertEquals(resultList.size(), 2);
+		assertEquals(resultList.get(0).intValue(), 1);
+		assertEquals(resultList.get(1).intValue(), 5);
+	}
+	
+	@Test
+	public void testWhereFirstAndLastFalse() {
+		Integer[] sourceArray = new Integer[]{1, 2, 3, 4, 5};
+		Enumerable<Integer> enumerable = Enumerable.create(sourceArray).where(new UnaryFunction<Integer, Boolean>() {
+
+			@Override public Boolean invoke(Integer arg) {
+				return !(arg == 1 || arg == 5);
+			}
+			
+		});
+		List<Integer> resultList = enumerable.toList();
+		assertEquals(resultList.size(), 3);
+		assertEquals(resultList.get(0).intValue(), 2);
+		assertEquals(resultList.get(1).intValue(), 3);
+		assertEquals(resultList.get(2).intValue(), 4);
 	}
 }
