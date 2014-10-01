@@ -87,7 +87,7 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 
 			{
 				while (iterator.hasNext()) {
-					next();
+					iterator.next();
 				}
 			}
 
