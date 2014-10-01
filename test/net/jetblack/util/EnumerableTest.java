@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -453,4 +454,21 @@ public class EnumerableTest {
 		assertEquals(array.length % blockSize, buffered.get(buffered.size()-1).size());
 	}
 
+	@Test
+	public void testDistinct() {
+		Integer[] sourceArray = new Integer[] {1, 2, 1, 2, 2, 3, 1, 2, 3, 3};
+		List<Integer> resultList = Enumerable.create(sourceArray).distinct(new Comparator<Integer>() {
+
+			@Override
+			public int compare(Integer arg0, Integer arg1) {
+				return arg0 - arg1;
+			}
+			
+		}).toList();
+		assertEquals(3, resultList.size());
+		assertTrue(resultList.contains(1));
+		assertTrue(resultList.contains(2));
+		assertTrue(resultList.contains(3));
+		
+	}
 }

@@ -14,6 +14,7 @@ import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Stack;
+import java.util.TreeSet;
 
 import net.jetblack.util.comparers.EqualityComparer;
 import net.jetblack.util.invokables.BinaryFunction;
@@ -644,10 +645,15 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 		});
 	}
 
-	public <R> Enumerable<R> selectMany(final UnaryFunction<T, Enumerable<R>> selector) {
-		return new Enumerable<R>() {
+	/**
+	 * Projects each element of a sequence to an Enumerable and flattens the resulting sequences into one sequence.
+	 * @param selector A transform function to apply to each element.
+	 * @return An Enumerable whose elements are the result of invoking the one-to-many transform function on each element of the input sequence.
+	 */
+	public <U> Enumerable<U> selectMany(final UnaryFunction<T, Enumerable<U>> selector) {
+		return new Enumerable<U>() {
 
-			Enumerable<R> buffer = null;
+			Enumerable<U> buffer = null;
 
 			@Override
 			public boolean hasNext() {
@@ -658,7 +664,7 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 			}
 
 			@Override
-			public R next() {
+			public U next() {
 
 				if (!hasNext()) {
 					throw new NoSuchElementException();
@@ -674,6 +680,12 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 		};
 	}
 
+	/**
+	 * Determines whether two sequences are equal by comparing their elements by using a specified comparer.
+	 * @param iterator The iterator to compare against.
+	 * @param comparer The function to use for comparison.
+	 * @return true if the sequences are the same.
+	 */
 	public <U> boolean sequenceEquals(Iterator<U> iterator, BinaryFunction<T, U, Boolean> comparer) {
 		while (hasNext() && iterator.hasNext()) {
 			if (comparer.invoke(next(), iterator.next()) != true) {
@@ -683,6 +695,11 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 		return !(hasNext() || iterator.hasNext());
 	}
 
+	/**
+	 * Determines whether two sequences are equal by comparing the elements by using the default equality comparer for their type.
+	 * @param iterator The iterator to compare against.
+	 * @return true if the sequences are the same.
+	 */
 	public boolean sequenceEquals(Iterator<T> iterator) {
 		return sequenceEquals(iterator, new EqualityComparer<T>());
 	}
@@ -802,4 +819,17 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 		return result;
 	}
 
+	public Enumerable<T> distinct(final Comparator<T> comparator) {
+		
+		final Set<T> set = new TreeSet<T>(comparator);
+
+		return where(new UnaryFunction<T, Boolean>() {
+
+			@Override
+			public Boolean invoke(T arg) {
+				return set.add(arg);
+			}
+			
+		});
+	}
 }
