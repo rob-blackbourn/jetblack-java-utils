@@ -6,11 +6,14 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Queue;
 import java.util.Set;
+import java.util.Stack;
 
 import net.jetblack.util.comparers.EqualityComparer;
 import net.jetblack.util.invokables.BinaryFunction;
@@ -21,15 +24,24 @@ import net.jetblack.util.types.TypeLiteral;
 
 public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 
+	/**
+	 * remove throws UnsupportedOperationException.
+	 */
 	@Override
 	public void remove() {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public Iterator<T> iterator() {
 		return this;
 	}
 
+	/**
+	 * Create an Enumerable from an array.
+	 * @param array The array source for the enumerable.
+	 * @return an object to enumerate over the array.
+	 */
 	public static <T> Enumerable<T> create(final T[] array) {
 		return new Enumerable<T>() {
 
@@ -48,6 +60,11 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 		};
 	}
 
+	/**
+	 * Create a reverse enumerable for an array.
+	 * @param array The array source for the enumerable.
+	 * @return an object to enumerate over the array.
+	 */
 	public static <T> Enumerable<T> createReverse(final T[] array) {
 		return new Enumerable<T>() {
 
@@ -66,6 +83,11 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 		};
 	}
 
+	/**
+	 * Create  an enumerable from an iterator.
+	 * @param iterator The iterator from which the enumerable is made.
+	 * @return an object to enumerate over the iterable.
+	 */
 	public static <T> Enumerable<T> create(final Iterator<T> iterator) {
 		return new Enumerable<T>() {
 
@@ -82,6 +104,11 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 		};
 	}
 
+	/**
+	 * Creates a reverse enumerable from a list iterator.
+	 * @param iterator The list iterator from which the enumerator is made.
+	 * @return an object to iterate over the list iterator.
+	 */
 	public static <T> Enumerable<T> createReverse(final ListIterator<T> iterator) {
 		return new Enumerable<T>() {
 
@@ -104,10 +131,114 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 		};
 	}
 
+	/**
+	 * Create an enumerable from an iterable.
+	 * @param iterable The iterable from which the enumerable is made.
+	 * @return an object to iterator over the iterable.
+	 */
 	public static <T> Enumerable<T> create(final Iterable<T> iterable) {
 		return create(iterable.iterator());
 	}
 
+	/**
+	 * Creates a depth first iterator.
+	 * @param root The root of the tree.
+	 * @param childSelector A function to get the children of the current node.
+	 * @param leftToRight If true iterate left to right, otherwise right to left.
+	 * @return an object which iterates over the tree.
+	 */
+	public static <T> Enumerable<T> createDepthFirst(final T root, final UnaryFunction<T, Enumerable<T>> childSelector, final boolean leftToRight) {
+		return new Enumerable<T>() {
+
+			final Set<T> visited = new HashSet<T>();
+			final Stack<T> stack = new Stack<T>();
+			
+			{
+				stack.push(root);
+			}
+			
+			@Override
+			public boolean hasNext() {
+				return !stack.isEmpty();
+			}
+
+			@Override
+			public T next() {
+				T current = stack.pop();
+				visited.add(current);
+				
+				Enumerable<T> children = childSelector.invoke(current);
+				if (children != null) {
+					children = children.where(new UnaryFunction<T, Boolean>(){
+						@Override
+						public Boolean invoke(T arg) {
+							return !visited.contains(arg);
+						}
+					});
+					
+					if (leftToRight) {
+						children = Enumerable.createReverse(children.toList().listIterator());
+					}
+
+					for (T child : children) {
+						stack.push(child);
+					}
+				}
+				
+				return current;
+			}
+			
+		};
+	}
+	
+	/**
+	 * Creates a breadth first iterator.
+	 * @param root The root of the tree.
+	 * @param childSelector a function to select the children of the current node.
+	 * @param topToBottom If true traverse from the top to the bottom, otherwise from the bottom to the top.
+	 * @return An object to iterate over the tree.
+	 */
+	public static <T> Enumerable<T> createBreadthFirst(final T root, final UnaryFunction<T, Enumerable<T>> childSelector, final boolean topToBottom) {
+		return new Enumerable<T>() {
+
+			Queue<T> queue = new LinkedList<T>();
+			
+			{
+				queue.add(root);
+			}
+			
+			@Override
+			public boolean hasNext() {
+				return !queue.isEmpty();
+			}
+
+			@Override
+			public T next() {
+				T current = queue.remove();
+				
+				Enumerable<T> children = childSelector.invoke(current);
+				if (children != null) {
+					
+					if (!topToBottom) {
+						children = Enumerable.createReverse(children.toList().listIterator());
+					}
+					
+					for (T child : children) {
+						queue.add(child);
+					}
+				}
+				
+				return current;
+			}
+			
+		};
+	}
+
+	/**
+	 * Creates an enumerable which iterates over the entries of a map.
+	 * @param map The map on which the iterator is made.
+	 * @return An object to iterate over the entries in a map.
+	 */
 	public static <K, V> Enumerable<Map.Entry<K, V>> create(final Map<K, V> map) {
 		return create(map.entrySet().iterator());
 	}
@@ -156,6 +287,11 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 		};
 	}
 
+	/**
+	 * Filters a sequence of values based on a predicate.
+	 * @param predicate A function to test each element for a condition.
+	 * @return An Enumerable that contains elements from the input sequence that satisfy the condition.
+	 */
 	public Enumerable<T> where(final UnaryFunction<T, Boolean> predicate) {
 
 		return new Enumerable<T>() {
@@ -234,6 +370,11 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 		}
 	}
 
+	/**
+	 * Returns a specified number of contiguous elements from the start of a sequence.
+	 * @param size The number of elements to return.
+	 * @return An Enumerable that contains the specified number of elements from the start of the input sequence.
+	 */
 	public Enumerable<T> take(final int size) {
 		return new Enumerable<T>() {
 
@@ -259,29 +400,40 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 		};
 	}
 
+	/**
+	 * Bypasses a specified number of elements in a sequence and then returns the remaining elements.
+	 * @param size The number of elements to skip before returning elements.
+	 * @return An Enumerable that contains the elements that occur after the specified index in the input sequence.
+	 */
 	public Enumerable<T> skip(final int size) {
 		return new Enumerable<T>() {
 
-			{
-				int i = 0;
-				while (Enumerable.this.hasNext() && i < size) {
-					next();
-					++i;
-				}
-			}
+			private int i = 0;
 			
 			@Override
 			public boolean hasNext() {
+				
+				while (Enumerable.this.hasNext() && i++ < size) {
+					Enumerable.this.next();
+				}
+
 				return Enumerable.this.hasNext();
 			}
 
 			@Override
 			public T next() {
+
 				return Enumerable.this.next();
 			}
 			
 		};
 	}
+	
+	/**
+	 * Buffers an enumerable into enumerables of a given size.
+	 * @param size The size of enumerables to buffer.
+	 * @return An enumerable of enumerables.
+	 */
 	public Enumerable<Enumerable<T>> buffer(final int size) {
 
 		return new Enumerable<Enumerable<T>>() {
@@ -349,6 +501,42 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 		return value;
 	}
 
+	public <U> U aggregate(BinaryFunction<T, U, U> aggregator) {
+		return aggregate(null, aggregator);
+	}
+	
+	/**
+	 * Concatenates two sequences.
+	 * @param enumerable The sequence to concatenate.
+	 * @return An Enumerable<T> that contains the concatenated elements of the two input sequences.
+	 */
+	public Enumerable<T> concat(final Enumerable<T> enumerable) {
+		return new Enumerable<T>() {
+
+			@Override
+			public boolean hasNext() {
+				return Enumerable.this.hasNext() || enumerable.hasNext();
+			}
+
+			@Override
+			public T next() {
+				if (Enumerable.this.hasNext()) {
+					return Enumerable.this.next();
+				} else {
+					return enumerable.next();
+				}
+			}
+			
+		};
+	}
+	
+	/**
+	 * Creates a Map<K, V> from an Enumerable<T> according to specified key selector and element selector functions.
+	 * @param keySelector A selector returning the key.
+	 * @param valueSelector A selector returning the value.
+	 * @param map The map to populate.
+	 * @return The populated map.
+	 */
 	public <K, V> Map<K, V> toMap(UnaryFunction<T, K> keySelector, UnaryFunction<T, V> valueSelector, Map<K, V> map) {
 
 		while (Enumerable.this.hasNext()) {
