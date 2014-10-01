@@ -4,10 +4,13 @@ import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.jetblack.util.invokables.BinaryFunction;
+import net.jetblack.util.invokables.UnaryAction;
 import net.jetblack.util.invokables.UnaryFunction;
 import net.jetblack.util.selectors.IdentitySelector;
 import net.jetblack.util.selectors.ToStringSelector;
@@ -325,4 +328,129 @@ public class EnumerableTest {
 			}
 		}));
 	}
+	
+	@Test
+	public void testCreateDepthFirst() {
+		TestNode root = new TestNode("root");
+		TestNode a = root.add("a");
+		TestNode aa = a.add("aa");
+		TestNode ab = a.add("ab");
+		TestNode aaa = aa.add("aaa");
+		TestNode aab = aa.add("aab");
+		TestNode b = root.add("b");
+		TestNode ba = b.add("ba");
+		TestNode bb = b.add("bb");
+		
+		Enumerable<String> enumerator = Enumerable.createDepthFirst(root, new UnaryFunction<TestNode, Enumerable<TestNode>>() {
+
+			@Override
+			public Enumerable<TestNode> invoke(TestNode arg) {
+				return Enumerable.create(arg.getChildren());
+			}
+			
+		}, true).select(new UnaryFunction<TestNode,String>() {
+
+			@Override
+			public String invoke(TestNode arg) {
+				return arg.getValue();
+			}
+			
+		});
+		
+		String[] expected = new String[] {"root", "a", "aa", "aaa", "aab", "ab", "b", "ba", "bb"};
+		assertTrue(enumerator.sequenceEquals(expected));
+	}
+	
+	@Test
+	public void testCreateBreadthFirst() {
+		TestNode root = new TestNode("root");
+		TestNode a = root.add("a");
+		TestNode aa = a.add("aa");
+		TestNode ab = a.add("ab");
+		TestNode aaa = aa.add("aaa");
+		TestNode aab = aa.add("aab");
+		TestNode b = root.add("b");
+		TestNode ba = b.add("ba");
+		TestNode bb = b.add("bb");
+		
+		Enumerable<String> enumerator = Enumerable.createBreadthFirst(root, new UnaryFunction<TestNode, Enumerable<TestNode>>() {
+
+			@Override
+			public Enumerable<TestNode> invoke(TestNode arg) {
+				return Enumerable.create(arg.getChildren());
+			}
+			
+		}, true).select(new UnaryFunction<TestNode,String>() {
+
+			@Override
+			public String invoke(TestNode arg) {
+				return arg.getValue();
+			}
+			
+		});
+		
+		String[] expected = new String[] {"root", "a", "b", "aa", "ab", "ba", "bb", "aaa", "aab"};
+		assertTrue(enumerator.sequenceEquals(expected));
+	}
+	
+	@Test
+	public void testSkipNone() {
+		assertTrue(Enumerable.create(new Integer[] {1, 2, 3, 4}).skip(0).sequenceEquals(new Integer[] {1, 2, 3, 4}));
+	}
+	
+	@Test
+	public void testSkipSome() {
+		assertTrue(Enumerable.create(new Integer[] {1, 2, 3, 4}).skip(2).sequenceEquals(new Integer[] {3, 4}));
+	}
+	
+	@Test
+	public void testSkipAll() {
+		assertEquals(0, Enumerable.create(new Integer[] {1, 2, 3, 4}).skip(4).size());
+	}
+	
+	@Test
+	public void testForEach() {
+		Integer[] array = new Integer[] {1, 2, 3};
+		Enumerable<Integer> e = Enumerable.create(array);
+		final int results[] = new int[] { 0, 0 };
+		e.forEach(new UnaryAction<Integer>() {
+
+			@Override
+			public void invoke(Integer arg) {
+				
+				results[0] = results[0] + arg.intValue();
+			}
+			
+		});
+		for (int i = 0; i < array.length; ++i) {
+			results[1] = results[1] + array[i];
+		}
+		
+		assertEquals(results[0], results[1]);
+	}
+
+	@Test
+	public void testBuffer() {
+		Integer[] array = new Integer[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+		final int blockSize = 4;
+		List<Collection<Integer>> buffered = Enumerable.create(array).buffer(blockSize).select(new UnaryFunction<Enumerable<Integer>,Collection<Integer>>() {
+			@Override public Collection<Integer> invoke(Enumerable<Integer> arg) {
+				return arg.toList();
+			}
+		}).toList();
+		
+		Integer count = Enumerable.create(buffered).aggregate(Integer.valueOf(0), new BinaryFunction<Collection<Integer>, Integer, Integer>() {
+
+			@Override
+			public Integer invoke(Collection<Integer> arg1, Integer arg2) {
+				return arg1.size() + arg2;
+			}
+			
+		});
+		assertEquals(array.length, count.intValue());
+		assertEquals(array.length / blockSize + (array.length % blockSize == 0 ? 0 : 1), buffered.size());
+		assertEquals(blockSize, buffered.get(0).size());
+		assertEquals(array.length % blockSize, buffered.get(buffered.size()-1).size());
+	}
+
 }
