@@ -471,4 +471,16 @@ public class EnumerableTest {
 		assertTrue(resultList.contains(3));
 		
 	}
+	
+	@Test
+	public void testSort() {
+		assertTrue(Enumerable.create(new Integer[] {7, 3, 2, 1, 9, 4, 5, 6, 8}).sort(new Comparator<Integer>() {
+
+			@Override
+			public int compare(Integer arg0, Integer arg1) {
+				return arg0 - arg1;
+			}
+			
+		}).sequenceEquals(new Integer[] {1, 2, 3, 4, 5, 6, 7, 8, 9}));
+	}
 }

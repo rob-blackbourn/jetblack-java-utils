@@ -2,6 +2,7 @@ package net.jetblack.util;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -622,7 +623,7 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 	public Set<T> toSet() {
 		return toSet(new HashSet<T>());
 	}
-
+	
 	public T min(final Comparator<T> comparator) {
 		return aggregate(null, new BinaryFunction<T, T, T>() {
 
@@ -831,5 +832,11 @@ public abstract class Enumerable<T> implements Iterator<T>, Iterable<T> {
 			}
 			
 		});
+	}
+	
+	public Enumerable<T> sort(final Comparator<? super T> comparator) {
+		List<T> list = toList();
+		Collections.sort(list, comparator);
+		return Enumerable.create(list);
 	}
 }
