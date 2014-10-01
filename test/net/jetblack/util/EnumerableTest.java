@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import net.jetblack.util.selectors.IdentitySelector;
+import net.jetblack.util.selectors.ToStringSelector;
 
 import org.junit.Test;
 
@@ -24,7 +25,7 @@ public class EnumerableTest {
 		}
 		assertTrue(sourceArray.length == list.size());
 		for (int i = 0; i < sourceArray.length; ++i) {
-			assertTrue(sourceArray[i] == list.get(i));
+			assertEquals(sourceArray[i], list.get(i));
 		}
 	}
 
@@ -38,7 +39,7 @@ public class EnumerableTest {
 		}
 		assertTrue(sourceArray.length == list.size());
 		for (int i = 0, j = sourceArray.length - 1; i < sourceArray.length; ++i, --j) {
-			assertTrue(sourceArray[i] == list.get(j));
+			assertEquals(sourceArray[i], list.get(j));
 		}
 	}
 	
@@ -52,7 +53,7 @@ public class EnumerableTest {
 		}
 		assertTrue(sourceList.size() == list.size());
 		for (int i = 0; i < sourceList.size(); ++i) {
-			assertTrue(sourceList.get(i) == list.get(i));
+			assertEquals(sourceList.get(i), list.get(i));
 		}
 	}
 
@@ -66,7 +67,7 @@ public class EnumerableTest {
 		}
 		assertTrue(sourceList.size() == list.size());
 		for (int i = 0, j = sourceList.size() - 1; i < sourceList.size(); ++i, --j) {
-			assertTrue(sourceList.get(i) == list.get(j));
+			assertEquals(sourceList.get(i), list.get(j));
 		}
 	}
 	
@@ -88,7 +89,7 @@ public class EnumerableTest {
 			assertTrue(sourceMap.containsKey(resultKey));
 		}
 		for (Map.Entry<String, Integer> sourceEntry : sourceMap.entrySet()) {
-			assertTrue(resultMap.get(sourceEntry.getKey()) == sourceEntry.getValue());
+			assertEquals(resultMap.get(sourceEntry.getKey()), sourceEntry.getValue());
 		}
 	}
 	
@@ -98,6 +99,15 @@ public class EnumerableTest {
 		int i = 0;
 		for (Integer value : Enumerable.create(sourceArray).select(new IdentitySelector<Integer>())) {
 			assertEquals(sourceArray[i++], value);
+		}
+	}
+	
+	@Test
+	public void testSelectProject() {
+		Integer[] sourceArray = new Integer[]{1, 2, 3, 4, 5};
+		int i = 0;
+		for (String value : Enumerable.create(sourceArray).select(new ToStringSelector<Integer>())) {
+			assertEquals(sourceArray[i++].toString(), value);
 		}
 	}
 }
