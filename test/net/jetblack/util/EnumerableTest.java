@@ -215,4 +215,114 @@ public class EnumerableTest {
 		assertEquals(resultList.get(1).intValue(), 3);
 		assertEquals(resultList.get(2).intValue(), 4);
 	}
+	
+	@Test
+	public void testAllOnEmpty() {
+		Integer[] sourceArray = new Integer[] {};
+		assertTrue(Enumerable.create(sourceArray).all(new UnaryFunction<Integer,Boolean>() {
+			@Override public Boolean invoke(Integer arg) {
+				return false;
+			}
+		}));
+	}
+	
+	@Test
+	public void testAllOnOneTrue() {
+		Integer[] sourceArray = new Integer[] {1};
+		assertTrue(Enumerable.create(sourceArray).all(new UnaryFunction<Integer,Boolean>() {
+			@Override public Boolean invoke(Integer arg) {
+				return arg == 1;
+			}
+		}));
+	}
+	
+	@Test
+	public void testAllOnOneFalse() {
+		Integer[] sourceArray = new Integer[] {1};
+		assertFalse(Enumerable.create(sourceArray).all(new UnaryFunction<Integer,Boolean>() {
+			@Override public Boolean invoke(Integer arg) {
+				return arg != 1;
+			}
+		}));
+	}
+	
+	@Test
+	public void testAllOnManyTrue() {
+		Integer[] sourceArray = new Integer[] {1, 2, 3, 4};
+		assertTrue(Enumerable.create(sourceArray).all(new UnaryFunction<Integer,Boolean>() {
+			@Override public Boolean invoke(Integer arg) {
+				return arg > 0;
+			}
+		}));
+	}
+	
+	@Test
+	public void testAllOnManyFalse() {
+		Integer[] sourceArray = new Integer[] {1, 2, 3, 4};
+		assertFalse(Enumerable.create(sourceArray).all(new UnaryFunction<Integer,Boolean>() {
+			@Override public Boolean invoke(Integer arg) {
+				return arg < 0;
+			}
+		}));
+	}
+	
+	@Test
+	public void testAllOnSomeFalse() {
+		Integer[] sourceArray = new Integer[] {1, 2, 3, 4};
+		assertFalse(Enumerable.create(sourceArray).all(new UnaryFunction<Integer,Boolean>() {
+			@Override public Boolean invoke(Integer arg) {
+				return arg < 3;
+			}
+		}));
+	}
+	
+	@Test
+	public void testAnyOnEmpty() {
+		Integer[] sourceArray = new Integer[] {};
+		assertFalse(Enumerable.create(sourceArray).any(new UnaryFunction<Integer,Boolean>() {
+			@Override public Boolean invoke(Integer arg) {
+				return false;
+			}
+		}));
+	}
+	
+	@Test
+	public void testAnyOnOneTrue() {
+		Integer[] sourceArray = new Integer[] {1};
+		assertTrue(Enumerable.create(sourceArray).any(new UnaryFunction<Integer,Boolean>() {
+			@Override public Boolean invoke(Integer arg) {
+				return arg == 1;
+			}
+		}));
+	}
+	
+	@Test
+	public void testAnyOnOneFalse() {
+		Integer[] sourceArray = new Integer[] {1};
+		assertFalse(Enumerable.create(sourceArray).any(new UnaryFunction<Integer,Boolean>() {
+			@Override public Boolean invoke(Integer arg) {
+				return arg != 1;
+			}
+		}));
+	}
+	
+	@Test
+	public void testAnyOnManyTrue() {
+		Integer[] sourceArray = new Integer[] {1, 2, 3, 4};
+		assertTrue(Enumerable.create(sourceArray).any(new UnaryFunction<Integer,Boolean>() {
+			@Override public Boolean invoke(Integer arg) {
+				return arg == 3;
+			}
+		}));
+	}
+	
+	@Test
+	public void testAnyOnManyFalse() {
+		Integer[] sourceArray = new Integer[] {1, 2, 3, 4};
+		assertFalse(Enumerable.create(sourceArray).any(new UnaryFunction<Integer,Boolean>() {
+			@Override public Boolean invoke(Integer arg) {
+				return arg < 0;
+			}
+		}));
+	}
 }
