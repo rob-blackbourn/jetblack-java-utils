@@ -16,6 +16,7 @@ Here is a brief example using a data set derived from the Top Trumps series 1 "S
 
 The collection is filtered to remove cars with a top speed of less then 200km/h, grouped by manufacturer, then sorted by power and printed.
 
+```java
 	Collection<Car> cars = Car.create();
 	
 	for (Map.Entry<String, Collection<Car>> fastCarsByManufacturer : Enumerable.create(cars).where(new UnaryFunction<Car,Boolean>() {
@@ -38,3 +39,4 @@ The collection is filtered to remove cars with a top speed of less then 200km/h,
 			System.out.println(car.toString());
 		}
 	}
+```
